@@ -10,11 +10,6 @@ import xml.etree.ElementTree as ET
 from requests import ConnectionError
 
 
-host_url = "https://www.moneycontrol.com"
-market_cap_path = "/stocks/marketinfo/marketcap/nse/"
-market_cap_index = market_cap_path + "index.html"
-
-
 class Company(object):
     """docstring for Company"""
 
@@ -23,23 +18,37 @@ class Company(object):
         self.sector = sector
         self.money_url = money_url
         self.name = name
-        self.last_price = last_price
-        self.p_change = p_change
-        self.y_low = y_low
-        self.y_high = y_high
-        self.market_cap = market_cap
+        self.last_price = float(last_price.replace(",",""))
+        self.p_change = float(p_change.replace(",",""))
+        self.y_low = float(y_low.replace(",",""))
+        self.y_high = float(y_high.replace(",",""))
+        self.market_cap = float(market_cap.replace(",",""))
+        self.ltp_to_low = self.ltp_change_from_low_percent()
+        self.ltp_to_high = self.ltp_change_from_high_percent()
+        self.high_to_low = self.low_change_from_high_percent()
 
     def __str__(self):
     	divider = "\n**************************************************************"
         return divider+"\nName      : " + self.name + \
-        	 "\nSector    : " + self.sector + \
-        	 "\nUrl       : " + self.money_url + \
-        	 "\nLTP       : " + self.last_price + \
-        	 "\n% Change  : " + self.p_change+\
-        	 "\n52wk Low  : " + self.y_low+\
-        	 "\n52wk High : " + self.y_high+\
-        	 "\nMarket Cap: " + self.market_cap+divider
+        	 "\nSector     : " + self.sector + \
+        	 "\nUrl        : " + self.money_url + \
+        	 "\nLTP        : " + str(self.last_price) + \
+        	 "\n% Change   : " + str(self.p_change)+\
+        	 "\n52wk Low   : " + str(self.y_low)+\
+        	 "\n52wk High  : " + str(self.y_high)+\
+        	 "\nMarket Cap : " + str(self.market_cap)+\
+        	 "\nLTP to Low : " + str(self.ltp_to_low)+" %"\
+        	 "\nLTP to High: " + str(self.ltp_to_high)+" %"\
+        	 "\nHigh to Low: " + str(self.high_to_low)+" %"+divider
 
+    def ltp_change_from_low_percent(self):
+    	return float(float(float(self.last_price-self.y_low)/self.last_price)*100)
+
+    def ltp_change_from_high_percent(self):
+    	return float(float(float(self.last_price-self.y_high)/self.last_price)*100)
+
+    def low_change_from_high_percent(self):
+    	return float(float(float(self.y_high-self.y_low)/self.y_high)*100)
 
 
 class WebScraper(object):
@@ -61,24 +70,32 @@ class WebScraper(object):
 class MoneyControl(object):
     """docstring for MoneyControl"""
 
-    def __init__(self):
+    def __init__(self,exchange):
         super(MoneyControl, self).__init__()
+        self.host_url = "https://www.moneycontrol.com"
+        self.home_path = "/stocks/marketinfo/marketcap/"
+        self.exchange = exchange
         self.sectors = []
         self.sectors_details = {}
         self.get_sectors()
         self.sector_wise_data = {}
         self.all_data = []
+        self.current_filter_data = []
         self.collect_data()
-        print "Collected %d portfolios from %d sectors" %(len(self.all_data),len(self.sectors))
 
     def load_market_cap_page(self, page_path):
-        print "Scraping data from -> " + host_url + page_path
-        return WebScraper.load_page(host_url + page_path)
+        print "Scraping data from -> " + self.host_url + page_path
+        return WebScraper.load_page(self.host_url + page_path)
 
     def get_sectors(self):
         #sector_xpath = "//select[@id='sel_code']/option"
         sector_xpath = "//a[@class='opt_notselected']"
-        page_data = self.load_market_cap_page(market_cap_index)
+        if self.exchange == 'nse' or self.exchange == 'NSE':
+        	self.exchange = 'nse'
+        elif self.exchange == 'bse' or self.exchange == 'BSE':
+        	self.exchange = 'bse'
+        else: self.exchange = 'nse'
+        page_data = self.load_market_cap_page(self.home_path+'/'+self.exchange+"/index.html")
         sectors = WebScraper.scrape_page(page_data, sector_xpath)
         for sec in sectors:
             self.sectors_details[sec.text] = sec.get("href")
@@ -100,8 +117,8 @@ class MoneyControl(object):
                 name = company.text
                 last_price = row_data[1].text
                 p_change = row_data[2].text
-                y_low = row_data[3].text
-                y_high = row_data[4].text
+                y_high = row_data[3].text
+                y_low = row_data[4].text
                 market_cap = row_data[5].text
                 comp_obj = None
                 comp_obj = Company(
@@ -109,9 +126,11 @@ class MoneyControl(object):
                 if comp_obj != None:
                     self.sector_wise_data[sector].append(comp_obj)
                     self.all_data.append(comp_obj)
-
+        print "Loaded %d portfolio from %d in %s"%(len(self.all_data),len(self.sectors),self.exchange)
 
 if __name__ == '__main__':
-    mc = MoneyControl()
+	exchange = raw_input("nse or bse ?\n")
+	mc = MoneyControl(exchange)
+
 
 
