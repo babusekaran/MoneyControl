@@ -1,0 +1,64 @@
+<!doctype html>
+<html class="no-js" lang="">
+	<head>
+		<meta charset="utf-8">
+		<title>
+		NSE | BSE - Stocks
+		</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
+		<script type="text/javascript" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+		<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css">
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+		<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+		<script type="text/javascript">
+			$(document).ready(function() {
+				
+				$.ajax(
+					{
+					url:'pd.json',
+					dataType:'json',
+					
+					success: function(dataSet){
+						console.log(dataSet);
+						$('#step-table').DataTable( {
+							
+        data: dataSet,
+        columns: [
+            { title: "Name" },
+            { title: "Sector" },
+            { title: "LTP" },
+            { title: "Last % Change" },
+            { title: "52 Wk Low" },
+            { title: "52 Wk High" },
+            { title: "Market Cap" }
+        ]
+    } );
+					},
+					error: function(jqXHR,textStatus,errorThrown){
+							alert("Alert \n "+textStatus+"\n" +errorThrown)
+					}
+				});
+			});
+		</script>
+		<script type="text/javascript">
+		
+		</script>
+		
+	</head>
+	<body style="background: linear-gradient(to right, #dae2f8, #d6a4a4);">
+		<div class="page-header text-center">
+			<h1>Portfolios<small>&nbsp;NSE | BSE</small></h1>
+		</div>
+		<br>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-lg-12">
+					<table id='step-table' class="display" cellspacing="0" width="100%">
+						
+					</table>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
